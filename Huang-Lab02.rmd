@@ -1,0 +1,96 @@
+---
+title: "Lab02 Write-Up"
+author: "Sherry Huang"
+output: 
+  pdf_document: 
+    highlight: pygments
+fontsize: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Reflection on primers
+
+What went well? Is there anywhere you got stuck? Do you have any lingering questions? 1-2 sentences here is fine, but you are welcome to write more if you need to!
+
+The primers are very helpful. Because I have already taken STAT 011 and STAT 021, I already know a lot of the basic codes to plot graphs, but there are small things that the primers teach that are really helpful. For example, I learned about the placement of aesthetics (from yesterday's primers), violin plots, etc. They're just very helpful in laying a solid foundation of R.
+
+# Star Wars 
+
+For the last part of this lab, we'll look at a fun dataset on Star Wars characters. This dataset is built into the `ggplot2` package, so we don't need the csv file to access it. 
+
+### Take a look at the starwars data frame.
+
+```{r glimpse-starwars}
+starwars
+```
+
+### Modify the following plot to change the color of all points to `"pink"`.
+
+```{r scatterplot}
+ggplot(starwars, 
+       aes(x = height, y = mass, color = gender, size = birth_year)) +
+  geom_point(color = "pink")
+```
+
+### Add labels for title, x and y axes, and size of points. Uncomment to see the effect.
+
+```{r scatterplot-labels}
+ggplot(starwars, 
+       aes(x = height, y = mass, color = gender, size = birth_year)) +
+  geom_point(color = "#30509C") +
+  labs(
+    title = "Relationship between height and mass of Star Wars characters",
+    subtitle = "showing birth year of characters",
+    x = "mass (kg)", 
+    y = "height (cm)",
+    size = "birth year"
+    )
+```
+
+### Pick a single categorical variable from the data set and make a bar plot of its distribution.
+
+(A little bit of starter code is provided below, and the code chunk is set to not be evaluated with `eval = FALSE` because the current code in there is not valid code and hence the document wouldn't knit. Once you replace the code with valid code, set the chunk option to `eval = TRUE`, or remove the `eval` option altogether since it's set to `TRUE` by default.)
+
+```{r barplot, eval = TRUE}
+ggplot(starwars, aes(x = homeworld)) +
+  geom_bar() +
+  labs(title = "Frequency of Star Wars characters and their homeworlds",
+       x = "homeworld",
+       y = "frequency") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+### Pick a numerical variable and a categorical variable and make a visualisation (you pick the type!) to visualise the relationship between the two variables. Along with your code and output, provide an interpretation of the visualisation.
+
+```{r num-cat}
+ggplot(data = starwars) +
+  geom_boxplot(mapping = aes(x = eye_color, y = height), alpha = 0.25) +
+  geom_violin(mapping = aes(x = eye_color, y = height), draw_quantiles = c(0.25, 0.5, 0.75), alpha = 0.75) +
+  labs(title = "Distribution of Star Wars characters' eye color and height",
+       x = "eye color",
+       y = "height (cm)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+I made a violin plot that shows the distribution relationship between eye color and height. However, some of the eye colors didn't have a corresponding violin plot, so I also added a box plot underneath the violin plots. Violin plots use densities to draw a smoothed version of a centered data plot of our data. The lines of the violin plots show the 25th, 50th, and 75th percentiles of the distribution at a certain eye color. Thicker parts means the values in that section has higher frequency. For example, if we look at the eye color blue, the thick part at around height $175$ tells us that a lot of blue-eyed characters have a height of $175$, more than there are blue-eyed characters at other heights.
+Meanwhile, the box plots show us almost the same thing as the violin plots, just slightly less information. The box of the box plot is the interquartile range, with the lowest line representing the 25th percentile, middle as the median, and top as the 75th percentile. The whiskers reach the minimums and maximums. The violin plots show a little more, mainly the thicknesses showing the frequencies.
+
+### Pick two numerical variables and two categorical variables and make a visualisation that incorportes all of them and provide an interpretation with your answer. 
+
+```{r multi}
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = mass, color = eye_color)) +
+  facet_wrap( ~sex, scales = "free_y") +
+  labs(title = "Charts",
+       x = "height (cm)",
+       y = "mass (kg)",
+       color = "eye color") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+I chose the continuous variables height (on the x-axis) and mass (on the y-axis). I then chose the categorical variables eye color (shown by the different colors of the points. Unfortunately, the colors of the points don't match up with the eye color they represent, but hopefully that's something we'll learn later. Also there are a lot of eye colors, so that will be a little difficult to differentiate, but again, hopefully we'll work on that later.) and sex (faceted into different plots). Each individual plot shows us the relationship between height and mass of Star Wars characters, as well as their eye color, of a certain sex. For example, if we look at the "Male" plot,  it shows a positive, linear trend between height and mass (shown by the distribution of the points) of all male characters in Star Wars. Then, if you look at the colors, you can determine which male characters have which eye color by looking at the color of the points and comparing to the legend. In general, this plot shows height, mass, eye color, and sex of Star Wars characters.

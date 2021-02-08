@@ -1,0 +1,50 @@
+---
+title: "Lab09 Plotly Graph"
+author: "Sherry Huang"
+output: 
+  html_document
+---
+
+```{r setup, include = FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidymodels)
+library(plotly)
+```
+
+# Plotly Graph
+
+```{r}
+life_expectancy =
+  read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-07-03/week14_global_life_expectancy.csv")
+life_expectancy <- life_expectancy %>% filter(year == 2015)
+
+world <- map_data("world")
+expectancy = left_join(world, life_expectancy, by = c("region" = "country"))
+
+expectancy = expectancy %>% 
+  mutate(age = case_when(
+    life_expectancy > 50 & life_expectancy <= 55 ~ "50-55",
+    life_expectancy > 55 & life_expectancy <= 60 ~ "55-60",
+    life_expectancy > 60 & life_expectancy <= 65 ~ "60-65",
+    life_expectancy > 65 & life_expectancy <= 70 ~ "65-70",
+    life_expectancy > 70 & life_expectancy <= 75 ~ "70-75",
+    life_expectancy > 75 & life_expectancy <= 80 ~ "75-80",
+    life_expectancy > 80 ~ "80+ years"))
+
+p0 <- ggplot(data = expectancy,
+             mapping = aes(x = long, y = lat, group = group, fill = age))
+
+p1 <- p0 + geom_polygon(aes(text = paste("Country: ", region,"\n Life Expectancy: ", life_expectancy)), color = "gray90", size = 0.1)
+
+p2 <- p1 + scale_fill_brewer(palette = "Spectral", na.value = "gray", direction = 1) +
+  labs(title = "Life Expectancy 2015",
+       caption = "SOURCE: https://ourworldindata.org/life-expectancy")
+
+p3 <- p2 + labs(fill = "age") + theme_void() + theme(text = element_text(family = "Arial"),
+                                               legend.position = "bottom",
+                                               legend.direction = "horizontal") +
+  guides(fill = guide_legend(nrow = 1))
+
+ggplotly(p3, tooltip = "text")
+```

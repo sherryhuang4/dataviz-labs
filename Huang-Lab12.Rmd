@@ -1,0 +1,111 @@
+---
+title: "Lab12 Write-Up"
+author: "Sherry Huang"
+output: 
+  pdf_document: 
+    highlight: pygments
+fontsize: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidytext)
+library(gutenbergr)
+library(extrafont)
+
+lab12_theme = theme_minimal(base_family = "Tahoma", base_size = 12)
+```
+
+# Part II: Sir Arthur Conan Doyle
+
+## 15 Most Frequent Words
+
+Starting in early high school, I fell in love with mystery novels. I of course started with Sir Arthur Conan Doyle's iconic character, Sherlock Holmes. I decided to focus this lab on his works. I picked four books to analyze: *The Sign of the Four*, *A Study in Scarlet*, *The Hound of the Baskervilles*, and *The Adventures of Sherlock Holmes*. The first three are considered novels, whereas the last one is a collection of short stories. Nevertheless, I thought they would be interesting to look at.
+
+```{r load-book-data-real, include=FALSE}
+# 2097 - The Sign of the Four by Arthur Conan Doyle
+# 244 - A Study in Scarlet by Arthur Conan Doyle
+# 2852 - The Hound of the Baskervilles by Arthur Conan Doyle
+# 1661 - The Adventures of Sherlock Holmes by Arthur Conan Doyle
+acd_raw <- gutenberg_download(c(2097, 244, 2852, 1661),
+                                 mirror = "http://mirrors.xmission.com/gutenberg/",
+                                 meta_fields = "title")
+head(acd_raw)
+```
+
+```{r tokenize}
+acd_words <- acd_raw %>% 
+  drop_na(text) %>% 
+  unnest_tokens(word, text)
+```
+
+```{r count}
+top_words_acd <- acd_words %>% 
+  # Remove stop words
+  anti_join(stop_words) %>% 
+  # Count all the words in each book
+  count(title, word, sort = TRUE) %>% 
+  # Keep top 15 in each book
+  group_by(title) %>% 
+  top_n(15) %>% 
+  ungroup() %>% 
+  # Make the words an ordered factor so they plot in order
+  mutate(word = fct_inorder(word))
+```
+
+```{r most-frequent-words}
+ggplot(top_words_acd, aes(y = fct_rev(word), x = n, fill = title)) + 
+  geom_col() + 
+  guides(fill = FALSE) +
+  labs(y = "Count", x = NULL, 
+       title = "15 Most Frequent Words in Sir Arthur Conan Doyle's Works") +
+  facet_wrap(vars(title), scales = "free_y") +
+  lab12_theme +
+  theme(plot.title.position = "plot") +
+  scale_fill_viridis_d(option = "C", end = .75)
+```
+
+In the above plot, I plotted the $15$ most frequent words in Sir Arthur Conan Doyle's writings. The charts tell us that, aside from *The Hound of the Baskervilles*, "Holmes" is the most common word. This is probably to be expected, as these writings revolve around Sherlock Holmes. Other common words that show up in at least $3$ of the $4$ books include "time", "door", "eyes", "found", "house", and "hand". From what I can recall from when I read these books, there was a lot of emphasis on certain times, finding clues, and leaving & entering homes. The other common words seem to be more related to their own stories/plots ("ferrier" and "drebber" in *A Study in Scarlet*, "baskerville" and "hound" and in *The Hound of the Baskervilles*, and "sholto" and "treasure" in *The Sign of the Four*).
+
+## 15 Most Frequent Bigrams
+
+```{r counting-bigrams}
+acd_bigrams <- acd_raw %>% 
+  drop_na(text) %>% 
+  # n = 2 here means bigrams. We could also make trigrams (n = 3) or any type of n-gram
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% 
+  # Split the bigrams into two words so we can remove stopwords
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stop_words$word,
+         !word2 %in% stop_words$word) %>% 
+  # Put the two word columns back together
+  unite(bigram, word1, word2, sep = " ")
+```
+
+```{r plotting-bigrams}
+top_bigrams <- acd_bigrams %>% 
+  filter(bigram != "NA NA") %>%
+  # Count all the bigrams in each play
+  count(title, bigram, sort = TRUE) %>% 
+  # Keep top 15 in each play
+  group_by(title) %>% 
+  top_n(15) %>% 
+  ungroup() %>% 
+  # Make the bigrams an ordered factor so they plot in order
+  mutate(bigram = fct_inorder(bigram))
+
+ggplot(top_bigrams, aes(y = fct_rev(bigram), x = n, fill = title)) + 
+  geom_col() + 
+  guides(fill = FALSE) +
+  labs(y = "Count", x = NULL, 
+       title = "15 Most Frequent Bigrams in Sir Arthur Conan Doyle's Works") +
+  facet_wrap(vars(title), scales = "free") + 
+  lab12_theme + 
+  theme(plot.title.position = "plot") +
+  scale_fill_viridis_d(option = "C", end = .75) +
+  guides(fill = FALSE)
+```
+
+The above plot displays the $15$ most frequent bigrams in the $4$ Sir Arthur Conan Doyle books I chose. Of course, one of the most frequent bigrams is "Sherlock Holmes." This is to be expected, as he is the main protagonist of these adventures. "Baker Street" shows up in all of them as well, as that's where Holmes and Watson live together. Other than that, most of the bigrams relate to the individual stories/plots themselves, particularly names and places. That makes sense to me, as the stories does focus a lot on going to places, talking to people, gathering clues, etc.

@@ -1,0 +1,121 @@
+---
+title: "COVID in New York State"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: united
+---
+
+As a native New Yorker, I was interested in seeing how New York state was doing during the pandemic. Below, you will see four graphs. On the left, there are 3 time series graphs (specific to just NY!) that you can switch between using the tabs at the top. On the right, you can see how New York compares to other states in terms of COVID-like illnesses.
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(palmerpenguins)
+library(plotly)
+library(GGally)
+library(tidyverse)
+library(tidymodels)
+```
+
+```{r, echo=FALSE}
+covid <- read.csv("covid_data.csv")
+dash_theme = theme_minimal() + 
+  theme(legend.position = "none",
+        text = element_text(family = "serif"))
+covid %>%
+  group_by(geo_value, signal) %>%
+  summarize(
+    avg = mean(value, na.rm = T)
+  ) %>%
+  pivot_wider(id_cols = geo_value, names_from = signal, values_from = avg) %>%
+  ungroup() -> state_avg
+
+state_avg <- state_avg %>%
+  mutate(color = ifelse(geo_value=="ny", 1, 0))
+```
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### COVID-like Illness
+
+```{r}
+ny_cli = covid %>%
+  filter(signal == "smoothed_cli" & geo_value == "ny") %>%
+  mutate(time = as.Date(time_value)) %>%
+  mutate(percentage = value*100)
+
+ny_cli %>%
+  ggplot(., aes(x = time, y = percentage, ymin = (value - 2*stderr)*100, ymax = (value + 2*stderr)*100)) +
+  geom_line(col = "red") +
+  geom_ribbon(alpha = 0.15, fill = "red") +
+  scale_x_date(date_labels = "%b %Y") +
+  labs(
+    title = "Estimated Percentage of New Yorkers with COVID-like Illnesses",
+    x = "",
+    y = "",
+    caption = "Source: Delphi Symptom Survey"
+  ) +
+  dash_theme
+```
+
+### Masks
+
+```{r}
+ny_masks = covid %>%
+  filter(signal == "smoothed_wearing_mask" & geo_value == "ny") %>%
+  mutate(time = as.Date(time_value))
+
+ny_masks %>%
+  ggplot(., aes(x = time, y = value, ymin = value - 2*stderr, ymax = value + 2*stderr)) +
+  geom_line(col = "blue") +
+  geom_ribbon(alpha = 0.15, fill = "blue") +
+  scale_x_date(date_labels = "%b %Y") +
+  labs(
+    title = "Estimated Percentage of New Yorkers who Wear Masks",
+    subtitle = "in the past 5 days",
+    x = "",
+    y = "",
+    caption = "Source: Delphi Symptom Survey"
+  ) +
+  dash_theme
+```
+
+### Testing
+
+```{r}
+ny_tests = covid %>%
+  filter(signal == "smoothed_tested_14d" & geo_value == "ny") %>%
+  mutate(time = as.Date(time_value))
+
+ny_tests %>%
+  ggplot(., aes(x = time, y = value, ymin = value - 2*stderr, ymax = value + 2*stderr)) +
+  geom_line(col = "purple") +
+  geom_ribbon(alpha = 0.15, fill = "purple") +
+  scale_x_date(date_labels = "%b %Y") +
+  labs(
+    title = "Estimated Percentage of New Yorkers who Were Tested for COVID-19",
+    subtitle = " in the past 14 days",
+    x = "",
+    y = "",
+    caption = "Source: Delphi Symptom Survey"
+  ) +
+  dash_theme
+```
+
+Column
+-----------------------------------------------------------------------
+
+### How Does NY Compare to Other States with COVID-like Illnesses?
+
+```{r}
+state_avg %>%
+  ggplot(., aes(x = geo_value, y = smoothed_cli, fill = color)) + 
+  geom_col() + 
+  dash_theme +
+  labs(x = "",
+       y = "people with COVID-like illness (%)") +
+  coord_flip() +
+  labs(caption = "Source: Delphi Symptom Survey")
+```

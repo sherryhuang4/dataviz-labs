@@ -1,0 +1,164 @@
+---
+title: "Lab06 Write-Up"
+author: "Sherry Huang"
+output: 
+  pdf_document: 
+    highlight: pygments
+    dev: cairo_pdf
+fontsize: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidymodels)
+```
+
+# Part 1: Nonlinear Regression
+
+```{r theme}
+lab06_theme = theme_minimal() + 
+  theme(text = element_text(family = "serif", size = 12))
+```
+
+```{r}
+data = read_csv("swarthmore.csv", col_names = FALSE)
+```
+
+
+```{r}
+ggplot(data, aes(x = X1, y = X2)) + 
+  geom_point() +
+  geom_smooth(method = "gam", se = FALSE, aes(col = "GAM")) +
+  geom_smooth(method = "loess", span = .2, se = FALSE, aes(col = "Loess")) +
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE, aes(col = "Quadratic")) +
+  geom_smooth(method = "lm", se = FALSE, alpha =.2, aes(col = "OLS")) +
+  lab06_theme + 
+  scale_color_viridis_d("Model", end = .75, option = "C")
+```
+
+# Part 2: Density Plots
+
+```{r}
+set.seed(011221)
+samples = data.frame(matrix(rnorm(1000), ncol = 10))
+colnames(samples) = paste0("sample", 1:10)
+samples = tibble(samples)
+samples %>%
+  pivot_longer(1:10) %>%
+  ggplot(., aes(x = value, fill = name)) + 
+  geom_histogram() + 
+  facet_wrap(vars(name)) + 
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  lab06_theme + 
+  theme(legend.position = "none")
+```
+
+```{r}
+samples %>%
+  pivot_longer(1:10) %>%
+  ggplot(., aes(x = value, fill = name)) + 
+  geom_histogram(aes(y = ..density..)) + 
+  geom_density(alpha = .3, bw = .4, aes(col = name)) +
+  facet_wrap(vars(name)) + 
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  scale_color_viridis_d(end = .75, option = "C") + 
+  lab06_theme + 
+  theme(legend.position = "none")
+```
+
+```{r}
+samples %>%
+  pivot_longer(1:10) %>%
+  ggplot(., aes(y = value, x = name, fill = name)) + 
+  geom_boxplot(alpha = .7) + 
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  scale_color_viridis_d(end = .75, option = "C") + 
+  lab06_theme + 
+  theme(legend.position = "none")
+```
+
+```{r}
+samples %>%
+  pivot_longer(1:10) %>%
+  ggplot(., aes(y = value, x = name, fill = name)) + 
+  geom_boxplot(alpha = .7) + 
+  geom_jitter(alpha = 0.5, aes(col = name)) +
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  scale_color_viridis_d(end = .75, option = "C") + 
+  lab06_theme + 
+  theme(legend.position = "none")
+```
+
+```{r}
+samples %>%
+  pivot_longer(1:10) %>%
+  ggplot(., aes(y = value, x = name, fill = name)) + 
+  geom_violin(alpha = .6) + 
+  geom_jitter(alpha = 0.5, aes(col = name)) +
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  scale_color_viridis_d(end = .75, option = "C") + 
+  lab06_theme + 
+  theme(legend.position = "none")
+```
+
+```{r}
+library(ggridges)
+samples %>%
+  pivot_longer(1:10) %>%
+  ggplot(., aes(y = name, x = value, fill = name)) + 
+  geom_density_ridges(alpha = .8) +
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  scale_color_viridis_d(end = .75, option = "C") + 
+  lab06_theme + 
+  theme(legend.position = "none")
+```
+
+# Part 3: Open-ended
+
+Reminder: here you'll use the `gapminder` data: 
+
+```{r}
+library(gapminder)
+head(gapminder)
+```
+
+## Nonlinear smoothers
+
+Find two variables from the `gapminder`, make a scatterplot, add a `geom_smooth` layer with a linear relationship and a `geom_smooth` layer with a nonlinear relationship (your choice!). Which fits better? Add colors and a legend. 
+
+```{r}
+ggplot(data = gapminder, mapping = aes(x = pop, y = lifeExp)) + 
+  geom_point() +
+  #geom_smooth(method = "gam", se = FALSE, aes(col = "GAM")) +
+  geom_smooth(method = "loess", span = .2, se = FALSE, aes(col = "Loess")) +
+  #geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE, aes(col = "Quadratic")) +
+  geom_smooth(method = "lm", se = FALSE, alpha =.2, aes(col = "OLS")) +
+  lab06_theme + 
+  scale_color_viridis_d("Model", end = .75, option = "C") +
+  labs(title = "Relationship Between Population and Life Expectancy",
+       subtitle = "fitted with linear and non-linear models",
+       x = "population",
+       y = "life expectancy")
+```
+ 
+I think the Loess model fits the data better because it follows the trend of the data better than the OLS model. While the OLS model shows a very general positive, linear correlation between population and expectancy, the Loess model shows the ups and downs and non-linear correlation between population and life expectancy.
+ 
+## Density 
+
+Choose a variable (or combination of variables) from the `gapminder` dataset and make either a kernel density plot, violin plot, or density ridges plot. Write 1-2 sentences summarizing your findings. 
+
+```{r}
+ggplot(gapminder, aes(y = continent, x = gdpPercap, fill = continent)) + 
+  geom_density_ridges(alpha = .8) +
+  scale_fill_viridis_d(end = .75, option = "C") + 
+  scale_color_viridis_d(end = .75, option = "C") + 
+  lab06_theme +
+  theme(legend.position = "none") +
+  labs(title = "Probability of GDPs in Each Continent",
+       x = "GDP Per Capita",
+       y = "continent")
+```
+
+This density ridges plot shows the probability of a specific continent having a certain GDP per capita; for example, we can see that for Oceania, $18000$ is the GDP with the highest probability. Something else to note would be the "bumps" in the plot; you can see in Asia, there's a very tall bump close to $0$, showing that there's a LOT of poor countries, but there's a second bump near the $20000$ mark, showing that there's also a significant number of wealthier countries in Asia.

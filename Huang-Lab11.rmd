@@ -1,0 +1,58 @@
+---
+title: "Lab11 Write-Up"
+author: "Sherry Huang"
+output: 
+  html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(gganimate)
+library(ggthemes)
+```
+
+
+# Part 1
+
+[You do not have to include any graphs here, but you can for your own notes if you wish!]
+
+# Part 2
+
+[You do not have to include any graphs here, but you can for your own notes if you wish!]
+
+# Part 3: Your turn! 
+
+Using any data besides `gapminder`, create any animation you want (besides the ones I've included here). Your animations can be similar to Examples 1 and 2, but should include changes beyond plugging in different variables to the `aes` calls.
+
+Everybody should submit an .rmd file with your animation. You should also turn in an HTML document (via RPubs) or use `anim_save()` to save your animation and turn it in alongside your .rmd file: 
+
+`anim_save(FILENAME, animation = last_animation())`
+
+(for more info, use `?anim_save`)
+
+```{r}
+life_expectancy =
+  read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-07-03/week14_global_life_expectancy.csv")
+```
+
+```{r}
+worldtilegrid <- read.csv("worldtilegrid.csv")
+world_expectancy = left_join(worldtilegrid, life_expectancy, by = c("alpha.3" = "code"))
+world_expectancy <- world_expectancy %>% filter(!is.na(year)) %>%
+  mutate(year = as.integer(year))
+
+
+anim_2 <- ggplot(world_expectancy, mapping = aes(x = year, y = life_expectancy, colour = name)
+  ) +
+  geom_line(show.legend = FALSE, alpha = 0.7) +
+  scale_color_viridis_d(option = "C") +
+  labs(title = "Life Expectancy over the Years", x = "", y = "life expectancy") +
+  facet_wrap(~ region) +
+  theme_bw() +
+  transition_reveal(year)
+
+animate(anim_2, nframes = 100)
+```
+

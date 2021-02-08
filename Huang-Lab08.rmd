@@ -1,0 +1,60 @@
+---
+title: "Lab08 Write-Up"
+author: "Sherry Huang"
+output: 
+  pdf_document: 
+    highlight: pygments
+    dev: cairo_pdf
+fontsize: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidymodels)
+```
+
+```{r}
+covid = read_csv("covid_data.csv")
+covid
+```
+
+# Part 1
+
+# Part 2
+
+# Part 3
+
+Using a different `signal` from the `covid` data (or more!), and/or restricting to any states of your choosing, make any of the time-related plots above, or something related to them. It may be helpful to return to the description of Delphi’s [signal variables](https://cmu-delphi.github.io/delphi-epidata/api/covidcast-signals/fb-survey.html#behavior-indicators) when choosing a signal and creating your titles, axes labels, and legend.
+
+You should make sure to incorporate the following custom elements in your graph:
+
+  + X-axis labels using `scale_x_time` if making a time series
+  + Color palette
+  + Theme
+  + Informative title/subtitle/axes labels/legends, etc. (If you find you do not need one or more of these elements to fully explain what is going on in your graph, you can leave them out if you prefer!)
+  
+```{r}
+ny_events = covid %>%
+  filter(signal == "smoothed_large_event_1d" & geo_value == "ny")
+ny_events
+```
+  
+```{r}
+library(ggthemes)
+ggplot(ny_events, aes(x = time_value, y = value, ymin = value - 2*stderr, ymax = value + 2*stderr)) +
+  geom_line(col = "red") +
+  geom_ribbon(alpha = .1, fill = "red") +
+  scale_x_date(date_labels = "%b %Y") +
+  labs(
+    x = "",
+    y = "",
+    title = "% of New Yorkers who attended an event \nw/ 10+ people in the past 24 hours",
+    subtitle = "Smoothed Estimate",
+    caption = "Source: Delphi Symptom Survey"
+  ) +
+  theme_fivethirtyeight() +
+  theme(text = element_text(family = "Tahoma"), plot.title.position = "plot")
+```
+  

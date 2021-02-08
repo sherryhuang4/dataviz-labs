@@ -1,0 +1,139 @@
+---
+title: "Lab03 Write-Up"
+author: "Sherry Huang"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(statebins)
+library(socviz)
+library(scales)
+```
+
+# Load data
+
+```{r load_data}
+county_level_2020 = read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
+
+state_level_2020 = county_level_2020 %>%
+  group_by(state_name) %>%
+  summarize(gop_votes = sum(votes_gop),
+         dem_votes = sum(votes_dem),
+         total_votes = sum(total_votes),
+         diff = sum(diff)) %>%
+  mutate(
+    pct_gop = gop_votes/total_votes,
+    pct_dem = dem_votes/total_votes
+  ) %>%
+  ungroup()
+
+state_level_2020
+```
+
+# Part 1
+
+## Replication 1: Figure 7.7
+
+```{r rep1}
+# YOUR CODE HERE
+us_states <- map_data("state")
+
+party_colors <- c("#2E74C0", "#CB454A")
+
+theme_map <- function(base_size=9, base_family="") {
+    require(grid)
+    theme_bw(base_size=base_size, base_family=base_family) %+replace%
+        theme(axis.line=element_blank(),
+              axis.text=element_blank(),
+              axis.ticks=element_blank(),
+              axis.title=element_blank(),
+              panel.background=element_blank(),
+              panel.border=element_blank(),
+              panel.grid=element_blank(),
+              panel.spacing=unit(0, "lines"),
+              plot.background=element_blank(),
+              legend.justification = c(0,0),
+              legend.position = c(0,0)
+              )
+}
+
+state_level_2020$region = tolower(state_level_2020$state_name)
+us_states_elec <- left_join(us_states, state_level_2020)
+
+state_level_2020$party = 
+  ifelse(state_level_2020$pct_gop > state_level_2020$pct_dem, "Republican", 
+         "Democrat")
+us_states_elec <- left_join(us_states, state_level_2020)
+
+p0 <- ggplot(data = us_states_elec,
+             mapping = aes(x = long, y = lat,
+                           group = group, fill = party))
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+p2 <- p1 + scale_fill_manual(values = party_colors) +
+    labs(title = "Election Results 2020", fill = NULL)
+p2 + theme_map()
+```
+
+## Replication 2: one of Figure 7.9
+
+```{r rep2}
+# YOUR CODE HERE
+state_level_2020$d_points = 
+  (state_level_2020$pct_dem - state_level_2020$pct_gop)*100
+us_states_elec <- left_join(us_states, state_level_2020)
+
+p00 <- ggplot(data = us_states_elec,
+             mapping = aes(x = long, y = lat, group = group, fill = d_points))
+
+p01 <- p00 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p02 <- p01 + scale_fill_gradient2() + labs(title = "2020 Election Winning Margins by State") 
+p02 + theme_map() + labs(fill = "Percent Difference")
+```
+
+## Replication 3: A `statebins` graph
+
+```{r rep3}
+# YOUR CODE HERE
+state_level_2020 <- state_level_2020 %>% mutate(color = recode(party, Republican = "darkred",
+                                               Democrat = "royalblue"))
+
+state_data = subset(state_level_2020, region != "district of columbia")
+
+statebins(state_data = state_data, state_col = "state_name",
+                     value_col = "pct_gop",
+                     palette="Reds", font_size = 3,
+          direction = 1) +
+  labs(fill = "Percent Trump") +
+  theme_statebins()
+
+statebins(state_data = state_data,
+                     state_col = "state_name",
+                     value_col = "pct_dem",
+                     palette="Blues", font_size = 3,
+          direction = 1) +
+  labs(fill = "Percent Biden") +
+  theme_statebins()
+```
+
+# Part 2
+
+```{r part2}
+# YOUR CODE HERE
+county_map_and_data = left_join(county_map, county_level_2020, by = c("id" = "county_fips"))
+
+county_map_and_data <- county_map_and_data %>%mutate(d_points = (per_dem - per_gop)*100)
+
+election2020_p <- ggplot(data = county_map_and_data,
+            mapping = aes(x = long, y = lat, fill = d_points, 
+                          group = group))
+election2020_p1 <- election2020_p + geom_polygon(color = "gray90", size = 0.05) + coord_equal()
+election2020_p2 <- election2020_p1 + scale_fill_gradient2() + labs(title = "2020 Election Winning Margins by County")
+
+election2020_p2 + labs(fill = "Percent Difference") +
+    theme_map() + theme(legend.position = "bottom")
+```

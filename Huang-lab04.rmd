@@ -1,0 +1,113 @@
+---
+title: "Lab04 Write-Up"
+author: "Sherry Huang"
+output: 
+  pdf_document: 
+    highlight: pygments
+fontsize: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(extrafont)
+```
+
+
+# Part 1: Changing the font
+
+```{r font}
+library(palmerpenguins)
+ggplot(penguins, aes(y=island, fill = island)) + 
+  geom_bar() + 
+  theme(text = element_text(family = "Georgia"))
+```
+
+I changed the font to Georgia.
+
+# Part 2: `annotate`
+
+```{r annotate}
+ggplot(penguins, aes(y=island, fill = island)) + 
+  geom_bar() + 
+  theme(text = element_text(family = "serif")) +
+  annotate("text", # What type of annotation to use 
+           x = c(15, 15, 15), # X positions of annotations
+           y =c("Torgersen", "Dream", "Biscoe"), # Y positions of annotations (weird because this is a barchart)
+           label =c("Torgersen", "Dream", "Biscoe")) + # Labels for annotations 
+  theme(legend.position = "none") # Gets rid of the legend 
+```
+
+# Part 3
+
+## First customized plot
+
+```{r open-ended-1}
+# YOUR CODE HERE
+library(socviz)
+library(ggthemes)
+county_level_2020 = read_csv("https://raw.githubusercontent.com/tonmcg/US_County_Level_Election_Results_08-20/master/2020_US_County_Level_Presidential_Results.csv")
+
+theme_map <- function(base_size=9, base_family="") {
+    require(grid)
+    theme_bw(base_size=base_size, base_family=base_family) %+replace%
+        theme(axis.line=element_blank(),
+              axis.text=element_blank(),
+              axis.ticks=element_blank(),
+              axis.title=element_blank(),
+              panel.background=element_blank(),
+              panel.border=element_blank(),
+              panel.grid=element_blank(),
+              panel.spacing=unit(0, "lines"),
+              plot.background=element_blank(),
+              legend.justification = c(0,0),
+              legend.position = c(0,0)
+              )
+}
+
+county_map_and_data = left_join(county_map, county_level_2020, by = c("id" = "county_fips"))
+
+county_map_and_data <- county_map_and_data %>%mutate(d_points = (per_dem - per_gop)*100)
+
+election2020_p <- ggplot(data = county_map_and_data,
+            mapping = aes(x = long, y = lat, fill = d_points, 
+                          group = group))
+election2020_p1 <- election2020_p + geom_polygon(color = "gray90", size = 0.05) + coord_equal()
+election2020_p2 <- election2020_p1 + scale_fill_gradient2() + labs(title = "2020 Election Winning Margins by County")
+
+election2020_p2 + labs(fill = "Percent Difference") +
+    theme_map() + theme_tufte() + theme(legend.position = "bottom", text = element_text(family = "Georgia"))
+```
+
+I took this map from my Lab 3, and I changed the theme to Tufte, and I also changed the font to Georgia. I didn't change the colors here because the colors represent each respective color's party, and doing so would probably confuse the audience.
+
+## Second customized plot
+
+```{r open-ended-2}
+# YOUR CODE HERE
+library(viridis)
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, fill = cut), width = 1) +
+  coord_polar() +
+  scale_fill_brewer(palette = "Set3") +
+  theme_excel() +
+  theme(legend.position = "bottom", text = element_text(family = "Tahoma")) +
+  labs(title = "Frequencies of Diamond Cuts",
+       subtitle = "shown with polar Coordinates")
+```
+
+I took this graph from one of the primers, and I changed the theme, font, and color. I don't particularly like the gray background because it's hard to read the labels on the graph, but I think those labels are redundant here anyways, as the legend also displays that information.
+
+## Third customized plot
+
+```{r open-ended-3}
+# YOUR CODE HERE
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge") +
+  theme_fivethirtyeight() +
+  theme(text = element_text(family = "AppleMyungjo")) +
+  scale_fill_brewer(palette = "PuOr")
+```
+
+I took this graph from one of the primers, and I changed the theme to FiveThirtyEight, I changed the color palette, and I also changed the font.
